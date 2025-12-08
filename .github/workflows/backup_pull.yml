@@ -42,5 +42,4 @@ jobs:
           git config user.email "backup-bot@github.com"
           git add backups
           git commit -m "Daily backup $(date)" || echo "No changes to commit"
-          git push https://x-access-token:${GITHUB_TOKEN}@github.com/singlesbusiness/backupdblonelypartner.git
-
+          git push origin HEAD:backup
