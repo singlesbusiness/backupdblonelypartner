@@ -37,5 +37,7 @@ jobs:
           git config user.name "GitHub Backup Bot"
           git config user.email "backup-bot@github.com"
           git add backups
+          # Delete backups older than 3 days
+          find backups -type f -mtime +3 -delete
           git commit -m "Daily backup $(date)" || echo "No changes to commit"
-          git push origin main
+          git push
