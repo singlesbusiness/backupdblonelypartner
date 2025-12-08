@@ -10,23 +10,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ Checkout repository (needed for workspace)
       - name: Checkout repository
         uses: actions/checkout@v3
-        with:
-          persist-credentials: true  # allows git push using GITHUB_TOKEN
 
+      # 2️⃣ Install SSH client to pull from VPS
       - name: Install SSH client
         run: sudo apt-get update && sudo apt-get install -y openssh-client
 
+      # 3️⃣ Add VPS SSH key
       - name: Add VPS SSH key
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
+      # 4️⃣ Add VPS to known hosts
       - name: Add VPS to known hosts
         run: ssh-keyscan -p ${{ secrets.VPS_PORT }} ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
 
+      # 5️⃣ Pull backup files from VPS
       - name: Pull backup files from VPS
         run: |
           mkdir -p backups
@@ -34,19 +37,13 @@ jobs:
               ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/dbbackup/*.gz \
               backups/ || true
 
-      - name: Commit & push backup files
-        env:
-          GH_PAT: ${{ secrets.GH_PAT }}
-        run: |
-          git config user.name "GitHub Backup Bot"
-          git config user.email "backup-bot@github.com"
-      
-          find backups -type f -mtime +3 -delete
-          git add backups
-          git commit -m "Daily backup $(date)" || echo "No changes to commit"
-      
-          git remote set-url origin https://$GH_PAT@github.com/singlesbusiness/backupdblonelypartner.git
-          git push origin HEAD:backup --force
+      # 6️⃣ Delete old backups locally (older than 3 days)
+      - name: Clean up old backups
+        run: find backups -type f -mtime +3 -delete
 
-
-
+      # 7️⃣ Upload backups as artifacts
+      - name: Upload backup artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: mysql-backup
+          path: backups/*.gz
