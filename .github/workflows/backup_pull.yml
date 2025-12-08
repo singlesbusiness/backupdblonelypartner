@@ -40,7 +40,15 @@ jobs:
         run: |
           git config user.name "GitHub Backup Bot"
           git config user.email "backup-bot@github.com"
+      
+          # Delete backups older than 3 days (optional)
+          find backups -type f -mtime +3 -delete
+      
           git add backups
           git commit -m "Daily backup $(date)" || echo "No changes to commit"
-          git push https://$GH_PAT@github.com/singlesbusiness/backupdblonelypartner.git
+      
+          # Force remote to use PAT for authentication
+          git remote set-url origin https://$GH_PAT@github.com/singlesbusiness/backupdblonelypartner.git
+          git push origin main
+
 
